@@ -7,9 +7,13 @@ def main():
     trainData= np.loadtxt("../data/train.txt") #Each element of this ndarray is a row
     file = open("../data/dataDesc.txt","r")
     m = json.load(file)
-    file.close() 
-    
+    file.close()
+    dept=0
+    dictArrays={"0":[trainData,m]}
     attributeSet, newDataSet= findRootNode(trainData,m)
+    dictArrays["1"]=[newDataSet,attributeSet]
+    
+    
     for newData in newDataSet:
         datasetEntropy= calculateGeneralEntropy(newData) # This is the entropy value for the whole dataset
         gainAttributes= []
@@ -17,8 +21,24 @@ def main():
             gainAttributes.append(datasetEntropy-calculateEntropyAttribute(newData,attr))
         arr= np.array(gainAttributes)
         indexMax= np.argmax(arr,axis=0) + 1 # first element contains class label
-        print(" Node is %s" % m[indexMax][0])
-        attributeSet.pop(indexMax)
+        print(" Node is %s" % attributeSet[indexMax][0])
+        # attributeSet.pop(indexMax)
+
+        # newAr= buildModifiedTrainData(newData,indexMax)
+        # for newData in newAr:
+        #     tempAttributeSet= attributeSet
+        #     tempAttributeSet.pop(indexMax)
+        #     datasetEntropy= calculateGeneralEntropy(newData) # This is the entropy value for the whole dataset
+        #     gainAttributes= []
+        #     for attr in range(1,len(tempAttributeSet)): #len(m)
+        #         gainAttributes.append(datasetEntropy-calculateEntropyAttribute(newData,attr))
+        #     arr= np.array(gainAttributes)
+        #     indexMax= np.argmax(arr,axis=0) + 1 # first element contains class label
+        #     print(" Node is %s" % tempAttributeSet[indexMax][0])
+        #     # attributeSet.pop(indexMax)
+        
+        
+        
     
     
 
@@ -90,7 +110,7 @@ def calculateEntropyAttribute(data,attrIndex):
             else: #High risk
                 highRisk+=1
         classSummary.append([lowRisk,highRisk])
-    print(classSummary)
+    # print(classSummary)
 
     #Calculate the entropy for each attribute label
     entropyAttr=[]
