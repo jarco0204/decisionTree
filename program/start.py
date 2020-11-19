@@ -3,39 +3,52 @@ import json
 import numpy as np
 import math
 
+
+class AttributeNode:
+
+    #Constructor
+    def __init__(self,dataSet, attributeSet, parent):
+        self.data= dataSet
+        self.attributes= attributeSet
+        self.parent= parent
+        self.children= [] #Takes an array of the AttributeNode children
+    
+    
+def expandNode(node):
+    for newData in node.data:
+        datasetEntropy= calculateGeneralEntropy(newData) # This is the entropy value for the whole dataset
+        gainAttributes= []
+        for attr in range(1,len(node.attributes)): #len(m)
+            gainAttributes.append(datasetEntropy-calculateEntropyAttribute(newData,attr))
+        arr= np.array(gainAttributes)
+        indexMax= np.argmax(arr,axis=0) + 1 # first element contains class label
+        print(" Node is %s" % node.attributes[indexMax][0])
+
+        newAttributes= node.attributes.copy()
+        newAttributes.pop(indexMax)
+        
+        node.children.append(AttributeNode(buildModifiedTrainData(newData,indexMax),newAttributes,node))
+
 def main():
     trainData= np.loadtxt("../data/train.txt") #Each element of this ndarray is a row
     file = open("../data/dataDesc.txt","r")
     m = json.load(file)
     file.close()
-    dept=0
-    dictArrays={"0":[trainData,m]}
-    attributeSet, newDataSet= findRootNode(trainData,m)
-    dictArrays["1"]=[newDataSet,attributeSet]
-    
-    
-    for newData in newDataSet:
-        datasetEntropy= calculateGeneralEntropy(newData) # This is the entropy value for the whole dataset
-        gainAttributes= []
-        for attr in range(1,len(attributeSet)): #len(m)
-            gainAttributes.append(datasetEntropy-calculateEntropyAttribute(newData,attr))
-        arr= np.array(gainAttributes)
-        indexMax= np.argmax(arr,axis=0) + 1 # first element contains class label
-        print(" Node is %s" % attributeSet[indexMax][0])
-        # attributeSet.pop(indexMax)
 
-        # newAr= buildModifiedTrainData(newData,indexMax)
-        # for newData in newAr:
-        #     tempAttributeSet= attributeSet
-        #     tempAttributeSet.pop(indexMax)
-        #     datasetEntropy= calculateGeneralEntropy(newData) # This is the entropy value for the whole dataset
-        #     gainAttributes= []
-        #     for attr in range(1,len(tempAttributeSet)): #len(m)
-        #         gainAttributes.append(datasetEntropy-calculateEntropyAttribute(newData,attr))
-        #     arr= np.array(gainAttributes)
-        #     indexMax= np.argmax(arr,axis=0) + 1 # first element contains class label
-        #     print(" Node is %s" % tempAttributeSet[indexMax][0])
-        #     # attributeSet.pop(indexMax)
+    
+    attributeSet, newDataSet= findRootNode(trainData,m)
+    rootNode= AttributeNode(newDataSet,attributeSet,None)
+    expandNode(rootNode)
+    i=1
+    for node in rootNode.children:
+        print(i)
+        expandNode(node)
+        i+=1
+    
+    
+
+    
+
         
         
         
@@ -99,7 +112,7 @@ def calculateEntropyAttribute(data,attrIndex):
     #Classify each element according to their attribute class (for this project at most 3)
     row= data[attrIndex]
     attrLabels= classifyByAttrLabels(row)
-
+    
     classSummary=[]
     for attr in attrLabels:
         lowRisk=0
@@ -110,17 +123,19 @@ def calculateEntropyAttribute(data,attrIndex):
             else: #High risk
                 highRisk+=1
         classSummary.append([lowRisk,highRisk])
-    # print(classSummary)
+    print(classSummary)
 
     #Calculate the entropy for each attribute label
     entropyAttr=[]
     totalsAttr=[]
     for attrLabel in classSummary:
         total= attrLabel[0]+attrLabel[1]
+
         totalsAttr.append(total)
         firstTerm= attrLabel[0]/total
         secondTerm= attrLabel[1]/total
         if(firstTerm!=0 and secondTerm!=0):
+
             entropyAttrLabel= (-firstTerm * math.log(firstTerm,2))+(-secondTerm * math.log(secondTerm,2))
         else:
             entropyAttrLabel=0
