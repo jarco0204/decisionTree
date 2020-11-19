@@ -7,11 +7,11 @@ import math
 class AttributeNode:
 
     #Constructor
-    def __init__(self,dataSet, attributeSet, parent):
+    def __init__(self,dataSet, attributeSet):
         self.data= dataSet
         self.attributes= attributeSet
-        self.parent= parent
         self.children= [] #Takes an array of the AttributeNode children
+        self.value= None
     
     
 def expandNode(node):
@@ -26,24 +26,45 @@ def expandNode(node):
 
         newAttributes= node.attributes.copy()
         newAttributes.pop(indexMax)
-        
-        node.children.append(AttributeNode(buildModifiedTrainData(newData,indexMax),newAttributes,node))
+        if(len(newAttributes)!=1):
+            node.children.append(AttributeNode(buildModifiedTrainData(newData,indexMax),newAttributes))
+        else:
+            node.children.append(None)
+            node.value=newAttributes[0][0]
+            
+
 
 def main():
+    #Section loads the file
     trainData= np.loadtxt("../data/train.txt") #Each element of this ndarray is a row
     file = open("../data/dataDesc.txt","r")
     m = json.load(file)
     file.close()
 
-    
+    #Section Calculates the root node
     attributeSet, newDataSet= findRootNode(trainData,m)
-    rootNode= AttributeNode(newDataSet,attributeSet,None)
-    expandNode(rootNode)
-    i=1
+    rootNode= AttributeNode(newDataSet,attributeSet) #Depth=0
+
+    #Section Calculates the following nodes at the next depth
+    expandNode(rootNode) #Depth=1
+
+    #Section to compute the next depth iteratively
+    print("Next depth")
     for node in rootNode.children:
-        print(i)
-        expandNode(node)
-        i+=1
+        expandNode(node) #Depth=2
+    
+    print("New depth")
+    for i in range(len(rootNode.children)):
+        for node in rootNode.children[i].children:
+            expandNode(node) #Depth=3
+
+    print("finalDepth")
+    for i in range(len(rootNode.children)):
+        for j in range(len(rootNode.children[i].children)):
+            for node in rootNode.children[i].children[j].children:
+                expandNode(node)
+
+    
     
     
 
@@ -81,6 +102,7 @@ def buildModifiedTrainData(trainData,indexMax):
     trainData=np.delete(trainData,indexMax,0)
     newAr=[]
     for attrLabel in indexesAttr:
+        # print(trainData)
         newData=np.zeros(shape=(len(trainData[:,1]),len(attrLabel)))
         i=0
         for element in attrLabel:
@@ -101,9 +123,19 @@ def calculateGeneralEntropy(data):
             lowRisk+=1
         else:
             highRisk+=1
-    firstTerm= lowRisk/len(classLabelRow)
-    secondTerm= highRisk/len(classLabelRow)
-    return (-firstTerm * math.log(firstTerm,2))+(-secondTerm * math.log(secondTerm,2))
+    try:
+        firstTerm= lowRisk/len(classLabelRow)
+        secondTerm= highRisk/len(classLabelRow)
+    except ZeroDivisionError:
+        firstTerm=0
+        secondTerm=0
+    
+    if(firstTerm!=0 and secondTerm!=0):
+        return(-firstTerm * math.log(firstTerm,2))+(-secondTerm * math.log(secondTerm,2))
+    else:
+        # print("0")
+        return 0
+    
     
 
 
@@ -123,17 +155,21 @@ def calculateEntropyAttribute(data,attrIndex):
             else: #High risk
                 highRisk+=1
         classSummary.append([lowRisk,highRisk])
-    print(classSummary)
+    # print(classSummary)
 
     #Calculate the entropy for each attribute label
     entropyAttr=[]
     totalsAttr=[]
     for attrLabel in classSummary:
         total= attrLabel[0]+attrLabel[1]
-
         totalsAttr.append(total)
-        firstTerm= attrLabel[0]/total
-        secondTerm= attrLabel[1]/total
+        try:
+            firstTerm= attrLabel[0]/total
+            secondTerm= attrLabel[1]/total
+        except ZeroDivisionError:
+            firstTerm=0
+            secondTerm=0
+
         if(firstTerm!=0 and secondTerm!=0):
 
             entropyAttrLabel= (-firstTerm * math.log(firstTerm,2))+(-secondTerm * math.log(secondTerm,2))
@@ -143,9 +179,13 @@ def calculateEntropyAttribute(data,attrIndex):
     
     finalEntropyAttribute=0
     i=0
+
     for attr in entropyAttr:
-        finalEntropyAttribute+= (totalsAttr[i]/len(row))*attr
-        i+=1
+        if(len(row)!=0):
+            finalEntropyAttribute+= (totalsAttr[i]/len(row))*attr
+            i+=1
+        else:
+            finalEntropyAttribute=0
 
     return finalEntropyAttribute
 
