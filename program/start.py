@@ -19,20 +19,21 @@ def main():
     
     print("Next Depth")
     expandNode(rootNode.children[0]) # Age is selected
-    print(rootNode.children[0].data)
-    print(rootNode.children[0].attributes)
-    print(rootNode.children[0].children)
+    
+    print("Children should be the # of attribute labels: %s" % len(rootNode.children[0].children))
+    print()
+
     print("Next Depth")
     expandNode(rootNode.children[0].children[0]) # Income is selected
-    print(rootNode.children[0].children[0].data)
-    print(rootNode.children[0].children[0].attributes)
-    print(rootNode.children[0].children[0].children)
+    print("Children should be the # of attribute labels: %s" % len(rootNode.children[0].children[0].children))
+    print()
+    
     print("Next Depth")
     expandNode(rootNode.children[0].children[0].children[0]) # Health is selected
-    #Investigating issue in which for this node attribute Health is possible
-    # print(rootNode.children[0].children[0].children[0].data)
-    print(rootNode.children[0].children[0].children[0].attributes)
-    print(rootNode.children[0].children[0].children[0].children)
+    print("Children should be the # of attribute labels: %s" % len(rootNode.children[0].children))
+    #NOTE problem is that for node health number of children node are 3, when at most they can be 2
+    
+
     #Section to compute the next depth iteratively
     # print("Next depth")
     # for node in rootNode.children:
@@ -71,24 +72,27 @@ def writeNode2File():
 def expandNode(node):
     datasetEntropy= calculateGeneralEntropy(node.data) # This is the entropy value for the whole dataset
     gainAttributes= []
+    print("attributes are: %s" % node.attributes)
+    print("This is the data which the node trains with: \n %s " % node.data)
     for attr in range(1,len(node.attributes)): #len(m)
         gainAttributes.append(datasetEntropy-calculateEntropyAttribute(node.data,attr))
     arr= np.array(gainAttributes)
     indexMax= np.argmax(arr,axis=0) + 1 # first element contains class label
-    print("Index max is %s"% indexMax)
+    # print("Index max is %s"% indexMax)
     print(" Node is %s" % node.attributes[indexMax][0])
 
     #Next section creates the children of the node based on attribute labels 
-    # newAttributes= node.attributes.copy() #Removed because with class is not longer necessary
     node.attributes.pop(indexMax)
-    
+    print("new attributes are: %s" % node.attributes)
     nextArray= buildModifiedTrainData(node.data, indexMax) #Returns a 2D array 
     for array in nextArray:
         if(len(node.attributes)!=1):
-            node.children.append(AttributeNode(array,node.attributes,node))
-        # else:
-        #     node.children.append(None)
-        #     node.value=[0][0]
+            newAttributes= node.attributes.copy() #Moved to here because I am EAF
+            node.children.append(AttributeNode(array,newAttributes,node))
+        else:
+            node.children.append(None)
+            print("No Child ")
+            node.value=[0][0]
 
 #This is a helper function that is called for every internal node
 #@args the original trainining set and the index[1 to n] of the attribute to classify the dataset
