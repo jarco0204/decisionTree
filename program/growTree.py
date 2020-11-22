@@ -5,10 +5,8 @@ import math
 class Attribute(object):
 
     def __init__(self, attrLabel, dataLabel):
-        self.node = [attrLabel,dataLabel]
-        self.left = None
-        self.center = None
-        self.right = None
+        self.name,self.data = attrLabel,dataLabel
+        self.left,self.center,self.right = None,None,None
         self.children = {}
 
 
@@ -22,9 +20,12 @@ def main():
 
     ##Calculate Root node
     leftovers = data.copy()
-    root = findEmptyNode(trainSet, data, leftovers)
-
+    root, leftovers = findEmptyNode(trainSet, data, leftovers)
     ##Calculate Children
+    #leftC, leftovers = findEmptyNode(root.data, data, leftovers)
+    #root.left = leftC
+    #print(root.data)
+
     #childrenEntropy
     
     
@@ -67,16 +68,36 @@ def findEmptyNode(trainSet, data, leftovers):
     entropyAtts = [entropySet - calcEntropy(trainSet,i) for i in range(1, len(trainSet))]
     attributeToNode = leftovers[entropyAtts.index(max(entropyAtts))][0]
     leftovers.pop(entropyAtts.index(max(entropyAtts)))
+    #print(trainSet)
+    indexToConvert = [data.index(i) for i in data if attributeToNode in i]
+    in1= [i for i in range(trainSet.shape[1]) if trainSet[indexToConvert[0]][i]==1]
+    in1.reverse()
+    in2= [i for i in range(trainSet.shape[1]) if trainSet[indexToConvert[0]][i]==2]
+    in2.reverse()
+    in3= [i for i in range(trainSet.shape[1]) if trainSet[indexToConvert[0]][i]==3]
+    in3.reverse()
+    leftChildren = trainSet.copy()
+    centerChildren = trainSet.copy()
+    rightChildren = trainSet.copy()
+    for i in in1:
+        leftChildren = np.delete(leftChildren, i,axis=1)
+    if len(in2)>0:
+        for i in in2:
+            centerChildren = np.delete(centerChildren, i,axis=1)
+    if len(in3)>0:
+        for i in in3:
+            rightChildren = np.delete(rightChildren, i,axis=1)
+    if len(in3) ==0:
+        rightChildren = None
+    if len(in2) ==0:
+        centerChildren = None
     for i in range(len(trainSet)):
-        if i==2:
-            print(trainSet[i])            
-    ##print(trainSet)
-    ##trainSet = np.delete(trainSet,1)
-    ##print("hello")
-    ##print(trainSet)
-    ##current = Attribute(attributeToNode, )
+        if i in indexToConvert:
+            xy = list(trainSet[i])
+            x = [0] * (len(xy))
+            trainSet[i] = np.fromiter(x, dtype=int)    
     
-    return
+    return Attribute(attributeToNode, trainSet),leftovers
 ##
 ## This function gives you the total low risk, and high risk
 ## based on the row you give it
