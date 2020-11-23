@@ -36,8 +36,8 @@ def tryExpandNode(node):
             print("Node is not expanded because all elements have same class label")
     else:
         if(len(node.attributes)==2): #first element is class label and second element is the last attribute
-            print("Gacha")
-            return # Leaf node
+            calculateProportionFinalAttribute(node)
+            
         else:
             expandNode(node)
             print(node.value)
@@ -45,6 +45,47 @@ def tryExpandNode(node):
             print(node.children[0].data)
         
         
+#This function calculates the class label attached to every leaf node in the last attibute
+def calculateProportionFinalAttribute(node):
+    attrLabel1=[]
+    attrLabel2=[]
+    attrLabel3=[] # for some nodes this is going to be empty
+    i= 0 # this is the index
+    allLabelsAr=[]
+    for element in node.data[1]: #This is the last attribute
+        if(element == 1):
+            attrLabel1.append(i)
+        elif(element==2):
+            attrLabel2.append(i)
+        else:
+            attrLabel3.append(i)
+        i+=1
+    allLabelsAr.append(attrLabel1)
+    allLabelsAr.append(attrLabel2)
+    if(len(attrLabel3)!=0):
+        allLabelsAr.append(attrLabel3)
+
+    #Next section looks at the class label associated with each element
+    for label in allLabelsAr: #2D array containing index position
+        class1=0
+        class2=0
+        for index in label:
+            if(node.data[0][index]==1): #Low risk
+                class1+=1
+            else:
+                class2+=1 #high risk
+        #IMPORTANT; as the decision tree algorithm gets better it will be able to predict for when there is 50/50 chance
+        #In simple words, if class1 == class2, then just select class 1
+        if(class1>= class2):
+            node.children.append(1) #This is the class label value (Leaf nodes are just numbers)
+        else:
+            node.children.append(2)
+        
+        print("TODO write to file")
+
+            
+
+
 
 
 
