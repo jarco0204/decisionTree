@@ -7,114 +7,125 @@ def main():
     #Section loads the file
     trainData= np.loadtxt("../data/train.txt") #Each element of this ndarray is a row
     file = open("../data/dataDesc.txt","r")
-    m = json.load(file)
+    attributeSet = json.load(file)
     file.close()
 
     #In this new update, the root node is being computed with the same function as for other nodes
-    rootNode= AttributeNode(trainData,m,None)
-    expandNode(rootNode) #Depth=0
-
-    #Had this idea of expand in breath-first manner to debug because below code that iterates is not correctling filling the last depth
-    #or it is not adding something to denote empty nodes (this is the core problem fidnding a way to halt this)
+    # print("Starting attribute set %s " % attributeSet)
+    rootNode= AttributeNode(trainData,attributeSet,None)
+    print("Depth 0")
+    tryExpandNode(rootNode) #new function to prevent errors when expanding leafs
+    print("Depth 1")
+    tryExpandNode(rootNode.children[0]) #Expands left child
+    print("Depth 2")
+    tryExpandNode(rootNode.children[0].children[0]) #Expands left child 
+    print("Depth 3")
+    tryExpandNode(rootNode.children[0].children[0].children[0]) #Expands left child
+    print("Depth 4")
+    tryExpandNode(rootNode.children[0].children[0].children[0].children[0]) #Expands left child
+    # print("Depth 5")
+    # tryExpandNode(rootNode.children[0].children[0].children[0].children[0].children[0]) #Expands left child 
     
-    print("Next Depth")
-    expandNode(rootNode.children[0]) # Age is selected
     
-    print("Children should be the # of attribute labels: %s" % len(rootNode.children[0].children))
-    print()
-
-    print("Next Depth")
-    expandNode(rootNode.children[0].children[0]) # Income is selected
-    print("Children should be the # of attribute labels: %s" % len(rootNode.children[0].children[0].children))
-    print()
-    
-    print("Next Depth")
-    expandNode(rootNode.children[0].children[0].children[0]) # Health is selected
-    print("Children should be the # of attribute labels: %s" % len(rootNode.children[0].children))
-    #NOTE problem is that for node health number of children node are 3, when at most they can be 2
-    
-
-    #Section to compute the next depth iteratively
-    # print("Next depth")
-    # for node in rootNode.children:
-    #     expandNode(node) #Depth=1
-    
-    # print("New depth")
-    # for i in range(len(rootNode.children)):
-    #     for node in rootNode.children[i].children:
-    #         expandNode(node) #Depth=3
-
-    # print("finalDepth")
-    # for i in range(len(rootNode.children)):
-    #     for j in range(len(rootNode.children[i].children)):
-    #         for node in rootNode.children[i].children[j].children:
-    #             expandNode(node)
-
-#TODO
-#This new function expands the nodes recursively    
-def growTreeRecursively(node):
-    if(node==None): #Base case
-        return node
+#Function checks some criteria to determine whether is logical to expand new node
+#Makes call to expandNode
+#@args node object at a certain depth
+#@return None 
+def tryExpandNode(node):
+    if(checkClassLabel(node)): #This function checks to see whether all objects in the training set have the same class label
+            print("Node is not expanded because all elements have same class label")
     else:
-        expandNode(node)
-        for child in node.children:
-            return growTreeRecursively(child)
+        if(len(node.attributes)==2): #first element is class label and second element is the last attribute
+            print("Gacha")
+            return # Leaf node
+        else:
+            expandNode(node)
+            print(node.value)
+            print(node.attributes) #This prints the attribute set after removing attribute from node.
+            print(node.children[0].data)
+        
+        
 
-#TODO
+
+
+# #This new function expands the nodes recursively    
+# def growTreeRecursively(node):
+#     if(node==None): #Base case
+#         return node
+#     else:
+#         expandNode(node)
+#         for child in node.children:
+#             return growTreeRecursively(child)
+
+
 #A new function that writes to file when each node is created
-def writeNode2File():
-    pass
+def writeNode2File(node):
+    a=node.value               #the first value is the value of the selected node
+    b=node.children[0].value   #the value of the first child
+    c=node.children[1].value   #value of second child
+    if len(node.children)==3:  # check for the cases where nodes have 3 branches
+        d=node.children[2].value
+        e=[a,{1:b,2:c,3:d}]     #Store in the tree as [node,{child1,child2,child3}] if there are 3 children
+    else:
+        e=[a,{1:b,2:c}]         #Else Store in the tree as [node,{child1,child2}]
+    with open("text.txt",'a') as f:
+        json.dump(e,f)          #Store tree in text file
+    
+
+def checkClassLabel(node):
+    yesObj= 0
+    noObj= 0
+    for element in node.data[0]: #refers to the class label
+        if(element==1):
+            yesObj+=1
+        else:
+            noObj+=1
+        #Check for early termination
+        if((yesObj!=0 and noObj!= 0)):
+            return False #There is entropy in the dataset
+    return True #All elements share same class label
+
+
+    
 
 #This function computes the children of a node
 #args An AttributeNode object
 #returns None
-#TODO Somewhere we need to check whether all elements share the same class label or not
 def expandNode(node):
     datasetEntropy= calculateGeneralEntropy(node.data) # This is the entropy value for the whole dataset
     gainAttributes= []
-    print("attributes are: %s" % node.attributes)
-    print("This is the data which the node trains with: \n %s " % node.data)
-    for attr in range(1,len(node.attributes)): #len(m)
+    for attr in range(1,len(node.attributes)): 
         gainAttributes.append(datasetEntropy-calculateEntropyAttribute(node.data,attr))
     arr= np.array(gainAttributes)
     indexMax= np.argmax(arr,axis=0) + 1 # first element contains class label
-    # print("Index max is %s"% indexMax)
-    print(" Node is %s" % node.attributes[indexMax][0])
+    node.value=node.attributes[indexMax][0]
+    node.attributes.pop(indexMax)
+    
 
     #Next section creates the children of the node based on attribute labels 
-    node.attributes.pop(indexMax)
-    print("new attributes are: %s" % node.attributes)
-    nextArray= buildModifiedTrainData(node.data, indexMax) #Returns a 2D array 
+    nextArray= buildModifiedTrainData(node.data, indexMax) #Returns a 2D array that classifies according to # of attribute labels
+    newAttributes= node.attributes.copy() 
     for array in nextArray:
-        if(len(node.attributes)!=1):
-            newAttributes= node.attributes.copy() #Moved to here because I am EAF
-            node.children.append(AttributeNode(array,newAttributes,node))
-        else:
-            node.children.append(None)
-            print("No Child ")
-            node.value=[0][0]
+        
+        node.children.append(AttributeNode(array,newAttributes,node))
 
 #This is a helper function that is called for every internal node
 #@args the original trainining set and the index[1 to n] of the attribute to classify the dataset
 #@returns the modifed array according to the attribute labels [1..3]
-#NOTE using print statement, it was verified that this algorithm rebuilds the array based on indexes correctly, might be worth checking it again with some fresh eyes
 def buildModifiedTrainData(trainData,indexMax):
     #This new section creates the next array to work with
     indexesAttr= classifyByAttrLabels(trainData[indexMax]) #indexes used to create new array according to attribute labels
-    # print("Array of indexes separated based on attribute labels are %s " %indexesAttr)
+    # print(len(trainData))
     trainData=np.delete(trainData,indexMax,0)
-    # print(trainData)
+    # print(len(trainData))
     newAr=[]
     for attrLabel in indexesAttr:
-        # print("Next attribute label")
         newData=np.zeros(shape=(len(trainData[:,1]),len(attrLabel)))
-        # print(newData)
         i=0
         for element in attrLabel:
             newData[:,i]=trainData[:,element]
             i+=1
         newAr.append(newData)
-        # print(newData)
     return newAr
 
 #This function classifies an attribute/row according to their labels
@@ -164,14 +175,15 @@ def calculateEntropyAttribute(data,attrIndex):
             firstTerm= attrLabel[0]/total
             secondTerm= attrLabel[1]/total
         except ZeroDivisionError:
+            print("Zero division")
             firstTerm=0
             secondTerm=0
 
         if(firstTerm!=0 and secondTerm!=0):
-
             entropyAttrLabel= (-firstTerm * math.log(firstTerm,2))+(-secondTerm * math.log(secondTerm,2))
         else:
             entropyAttrLabel=0
+
         entropyAttr.append(entropyAttrLabel)
     
     finalEntropyAttribute=0
@@ -202,6 +214,7 @@ def calculateGeneralEntropy(data):
         firstTerm= lowRisk/len(classLabelRow)
         secondTerm= highRisk/len(classLabelRow)
     except ZeroDivisionError:
+        print("this shouldn't execute")
         firstTerm=0
         secondTerm=0
     
@@ -210,7 +223,7 @@ def calculateGeneralEntropy(data):
     else:
         # print("0")
         return 0
-         
+
 #Helper class to Bookkeep the important variables to build each node
 class AttributeNode:
     #Constructor
