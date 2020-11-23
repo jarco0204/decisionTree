@@ -34,6 +34,7 @@ def main():
 def tryExpandNode(node):
     if(checkClassLabel(node)): #This function checks to see whether all objects in the training set have the same class label
             print("Node is not expanded because all elements have same class label")
+            node.children.append(node.data[0][0])# We know all elements share the same value
     else:
         if(len(node.attributes)==2): #first element is class label and second element is the last attribute
             calculateProportionFinalAttribute(node)
