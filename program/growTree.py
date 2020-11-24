@@ -39,7 +39,8 @@ def main():
                 for k in range(len(rootNode.children[i].children[j].children)):
                     if (rootNode.children[i].children[j].children[k].children != None):
                         for l in range(len(rootNode.children[i].children[j].children[k].children)):
-                            tryExpandNode(rootNode.children[i].children[j].children[k].children[l])
+                            if(rootNode.children[i].children[j].children[k].children[l] != int):
+                                tryExpandNode(rootNode.children[i].children[j].children[k].children[l])
 
 
     # tryExpandNode(rootNode.children[0].children[0].children[0]) #Expands left child
@@ -109,7 +110,7 @@ def calculateProportionFinalAttribute(node):
         else:
             node.value= 2
         node.children= None
-        print(node.value)
+        print("Final value is : %s" % node.value)
 
             
 
