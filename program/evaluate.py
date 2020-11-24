@@ -17,7 +17,7 @@ def main(fname):
         v=p[node[0]]
         node=node[1][v]
         node=str(node)
-      if (node=='CRED_HIS'):
+      if (node=='CRED_HIS'):                                        #we check if the attribute set leads to the root
         node=2
       else:
         node=1
