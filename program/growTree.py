@@ -15,15 +15,38 @@ def main():
     rootNode= AttributeNode(trainData,attributeSet,None)
     print("Depth 0")
     tryExpandNode(rootNode) #new function to prevent errors when expanding leafs
+
     print("Depth 1")
-    tryExpandNode(rootNode.children[0]) #Expands left child
+    for i in range(len(rootNode.children)):
+        tryExpandNode(rootNode.children[i])
+
     print("Depth 2")
-    tryExpandNode(rootNode.children[0].children[0]) #Expands left child 
-    print("Depth 3")
-    tryExpandNode(rootNode.children[0].children[0].children[0]) #Expands left child
+    for i in range(len(rootNode.children)):
+        for j in range(len(rootNode.children[i].children)):
+            tryExpandNode(rootNode.children[i].children[j])
+
+    print("Depth 3") 
+    for i in range(len(rootNode.children)):
+        for j in range(len(rootNode.children[i].children)):
+            if(rootNode.children[i].children[j].children != None):
+                for k in range(len(rootNode.children[i].children[j].children)):
+                    tryExpandNode(rootNode.children[i].children[j].children[k])
+
     print("Depth 4")
-    tryExpandNode(rootNode.children[0].children[0].children[0].children[0]) #Expands left child
+    for i in range(len(rootNode.children)):
+        for j in range(len(rootNode.children[i].children)):
+            if(rootNode.children[i].children[j].children != None):
+                for k in range(len(rootNode.children[i].children[j].children)):
+                    if (rootNode.children[i].children[j].children[k].children != None):
+                        for l in range(len(rootNode.children[i].children[j].children[k].children)):
+                            tryExpandNode(rootNode.children[i].children[j].children[k].children[l])
+
+
+    # tryExpandNode(rootNode.children[0].children[0].children[0]) #Expands left child
+    
+    # tryExpandNode(rootNode.children[0].children[0].children[0].children[0]) #Expands left child
     # print("Depth 5")
+    
     # tryExpandNode(rootNode.children[0].children[0].children[0].children[0].children[0]) #Expands left child 
     
     
@@ -32,9 +55,14 @@ def main():
 #@args node object at a certain depth
 #@return None 
 def tryExpandNode(node):
+    if(node.value!=None or node.children==None): # This means that node is leaf
+        print("Don't execute")
+        return
     if(checkClassLabel(node)): #This function checks to see whether all objects in the training set have the same class label
-            print("Node is not expanded because all elements have same class label")
-            node.children.append(node.data[0][0])# We know all elements share the same value
+            # print("Node is not expanded because all elements have same class label")
+            node.children= None
+            node.value= node.data[0][0] #We know all elements share the same value
+            print("Node has entropy of 0; thus value is %s" % node.value)
     else:
         if(len(node.attributes)==2): #first element is class label and second element is the last attribute
             calculateProportionFinalAttribute(node)
@@ -42,8 +70,7 @@ def tryExpandNode(node):
         else:
             expandNode(node)
             print(node.value)
-            print(node.attributes) #This prints the attribute set after removing attribute from node.
-            print(node.children[0].data)
+            
         
         
 #This function calculates the class label attached to every leaf node in the last attibute
@@ -78,27 +105,13 @@ def calculateProportionFinalAttribute(node):
         #IMPORTANT; as the decision tree algorithm gets better it will be able to predict for when there is 50/50 chance
         #In simple words, if class1 == class2, then just select class 1
         if(class1>= class2):
-            node.children.append(1) #This is the class label value (Leaf nodes are just numbers)
+            node.value=1
         else:
-            node.children.append(2)
-        
-        print("TODO write to file")
+            node.value= 2
+        node.children= None
+        print(node.value)
 
             
-
-
-
-
-
-# #This new function expands the nodes recursively    
-# def growTreeRecursively(node):
-#     if(node==None): #Base case
-#         return node
-#     else:
-#         expandNode(node)
-#         for child in node.children:
-#             return growTreeRecursively(child)
-
 
 #A new function that writes to file when each node is created
 def writeNode2File(node):
@@ -141,15 +154,16 @@ def expandNode(node):
     arr= np.array(gainAttributes)
     indexMax= np.argmax(arr,axis=0) + 1 # first element contains class label
     node.value=node.attributes[indexMax][0]
-    node.attributes.pop(indexMax)
+    newAttributes= node.attributes.copy() 
+    newAttributes.pop(indexMax) #Different objects
     
 
     #Next section creates the children of the node based on attribute labels 
     nextArray= buildModifiedTrainData(node.data, indexMax) #Returns a 2D array that classifies according to # of attribute labels
-    newAttributes= node.attributes.copy() 
+    
     for array in nextArray:
         
-        node.children.append(AttributeNode(array,newAttributes,node))
+        node.children.append(AttributeNode(array,newAttributes,None))
 
 #This is a helper function that is called for every internal node
 #@args the original trainining set and the index[1 to n] of the attribute to classify the dataset
@@ -217,7 +231,7 @@ def calculateEntropyAttribute(data,attrIndex):
             firstTerm= attrLabel[0]/total
             secondTerm= attrLabel[1]/total
         except ZeroDivisionError:
-            print("Zero division")
+            # print("Zero division")
             firstTerm=0
             secondTerm=0
 
@@ -269,12 +283,12 @@ def calculateGeneralEntropy(data):
 #Helper class to Bookkeep the important variables to build each node
 class AttributeNode:
     #Constructor
-    def __init__(self,dataSet, attributeSet,par):
+    def __init__(self,dataSet, attributeSet,val):
         self.data= dataSet
         self.attributes= attributeSet
         self.children= [] #array of the AttributeNode children
-        self.value= None
-        self.parent = par #added back because we need to do it recursively
+        self.value= val #Change in order to facilitate ending condition
+        # self.parent = par #added back because we need to do it recursively
 
 
 #Start of the program
